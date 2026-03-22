@@ -1,23 +1,28 @@
-FROM golang:1.26-alpine AS builder
+# ── Build stage ──────────────────────────────────────────────────────────
+FROM golang:1.22-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates tzdata
 
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum* ./
-RUN go mod download
+# Cache deps layer separately from source
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
 
-# Copy source
 COPY . .
 
-# Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/backtest-engine ./cmd/server
+# Build with version info baked in
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s -X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)" \
+    -o /app/server ./cmd/server
 
-# ── Runtime ──
-FROM alpine:3.21
+# ── Runtime stage ─────────────────────────────────────────────────────────
+FROM scratch
 
-RUN apk add --no-cache ca-certificates tzdata
-COPY --from=builder /bin/backtest-engine /bin/backtest-engine
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /app/server /server
 
 EXPOSE 50051 8080
 
-ENTRYPOINT ["/bin/backtest-engine"]
+ENTRYPOINT ["/server"]
