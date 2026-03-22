@@ -26,5 +26,10 @@
   },
   "dependencies": {
     "tsx": "^4.21.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "drizzle-orm": "0.38.4"
+    }
   }
 }

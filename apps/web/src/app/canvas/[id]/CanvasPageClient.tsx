@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────
 
 import { useCallback } from "react";
-import { useMutation } from "@convex-use/react";
+import { useMutation } from "convex/react";
 import { api } from "@supercanvas/convex";
 import { trpc } from "../../../lib/trpc";
 import { StrategyCanvas } from "../../../components/canvas/StrategyCanvas";

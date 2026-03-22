@@ -2,7 +2,12 @@
   "name": "@supercanvas/convex",
   "version": "0.0.1",
   "private": true,
-  "main": "./convex/index.ts",
+  "exports": {
+    ".": {
+      "types": "./convex/index.ts",
+      "default": "./convex/index.ts"
+    }
+  },
   "scripts": {
     "dev": "dotenv -e ../../.env.local -- npx convex dev",
     "deploy": "dotenv -e ../../.env.local -- npx convex deploy",

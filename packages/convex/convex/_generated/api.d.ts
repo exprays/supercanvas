@@ -9,6 +9,7 @@
  */
 
 import type * as backtestProgress from "../backtestProgress.js";
+import type * as index from "../index.js";
 import type * as presence from "../presence.js";
 import type * as strategies from "../strategies.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   backtestProgress: typeof backtestProgress;
+  index: typeof index;
   presence: typeof presence;
   strategies: typeof strategies;
 }>;
