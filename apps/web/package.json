@@ -17,6 +17,7 @@
     "@supercanvas/db": "workspace:*",
     "@supercanvas/inngest-fns": "workspace:*",
     "@supercanvas/types": "workspace:*",
+    "@supercanvas/ui": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "^11.0.0-rc.0",
     "@trpc/next": "^11.0.0-rc.0",
@@ -32,10 +33,12 @@
     "next": "^14.2.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "reactflow": "^11.11.4",
     "superjson": "^2.2.6",
     "svix": "^1.0.0",
     "tailwind-merge": "^3.0.0",
     "zod": "^3.0.0",
+    "zundo": "^2.3.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
