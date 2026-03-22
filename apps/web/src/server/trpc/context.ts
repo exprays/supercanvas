@@ -5,7 +5,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { getDb } from "@supercanvas/db";
-import { getRedis } from "../lib/redis";
+import { getRedis } from "../../lib/redis";
 import type { NextRequest } from "next/server";
 
 export async function createContext(opts?: { req?: NextRequest }) {

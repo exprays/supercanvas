@@ -5,9 +5,9 @@
 
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest, NextResponse } from "next/server";
-import { appRouter } from "../../../server/root";
-import { createContext } from "../../../server/trpc/context";
-import { getStandardRateLimit } from "../../../lib/rate-limit";
+import { appRouter } from "../../../../server/root";
+import { createContext } from "../../../../server/trpc/context";
+import { getStandardRateLimit } from "../../../../lib/rate-limit";
 
 async function handler(req: NextRequest) {
   // ── Rate limiting ──
@@ -37,8 +37,8 @@ async function handler(req: NextRequest) {
     onError:
       process.env.NODE_ENV === "development"
         ? ({ path, error }) => {
-            console.error(`tRPC error on ${path ?? "<no-path>"}:`, error);
-          }
+          console.error(`tRPC error on ${path ?? "<no-path>"}:`, error);
+        }
         : undefined,
   });
 }
