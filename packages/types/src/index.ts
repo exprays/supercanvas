@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────────
-// SuperCanvas — Shared Types
+// SuperCanvas — Types Package Index
 // ─────────────────────────────────────────────
 
 export * from "./strategy";
 export * from "./backtest";
-export * from "./user";
 export * from "./marketplace";
+export * from "./user";
+export * from "./nodes";
