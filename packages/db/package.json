@@ -6,10 +6,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "generate": "drizzle-kit generate",
-    "migrate": "tsx src/migrate.ts",
-    "push": "drizzle-kit push",
-    "studio": "drizzle-kit studio",
+    "generate": "dotenv -e ../../.env.local -- drizzle-kit generate",
+    "migrate": "dotenv -e ../../.env.local -- tsx src/migrate.ts",
+    "push": "dotenv -e ../../.env.local -- drizzle-kit push",
+    "studio": "dotenv -e ../../.env.local -- drizzle-kit studio",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

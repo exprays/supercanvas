@@ -4,8 +4,8 @@
   "private": true,
   "main": "./convex/index.ts",
   "scripts": {
-    "dev": "npx convex dev",
-    "deploy": "npx convex deploy",
+    "dev": "dotenv -e ../../.env.local -- npx convex dev",
+    "deploy": "dotenv -e ../../.env.local -- npx convex deploy",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -2,7 +2,7 @@ import type { Config } from "drizzle-kit";
 import * as dotenv from "dotenv";
 
 // Load env when running drizzle-kit CLI directly
-dotenv.config({ path: "../../apps/web/.env.local" });
+dotenv.config({ path: "../../.env.local" });
 
 export default {
   schema: "./src/schema/index.ts",
