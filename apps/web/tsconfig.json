@@ -1,0 +1,12 @@
+{
+  "extends": "@supercanvas/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@supercanvas/types": ["../../packages/types/src"],
+      "@supercanvas/db": ["../../packages/db/src"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
