@@ -1,27 +1,23 @@
+// ─────────────────────────────────────────────
+// SuperCanvas — Root Layout
+// Wires: ClerkProvider + ConvexProvider + tRPC
+// ─────────────────────────────────────────────
+
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { ConvexClientProvider } from "../components/providers/ConvexClientProvider";
+import { TRPCProvider } from "../components/providers/TRPCProvider";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+
 export const metadata: Metadata = {
-  title: "SuperCanvas — No-Code Algo Trading Platform",
+  title: "SuperCanvas — No-Code Algo Trading",
   description:
-    "Build, backtest, and deploy algorithmic trading strategies with a visual node-based editor. No coding required.",
-  keywords: [
-    "algorithmic trading",
-    "no-code",
-    "backtesting",
-    "trading strategy",
-    "quantitative finance",
-    "node editor",
-  ],
-  openGraph: {
-    title: "SuperCanvas — No-Code Algo Trading Platform",
-    description:
-      "Build, backtest, and deploy algorithmic trading strategies visually.",
-    siteName: "SuperCanvas",
-    type: "website",
-  },
+    "Build, backtest, and deploy algorithmic trading strategies. No code required.",
+  keywords: ["algorithmic trading", "backtest", "no-code", "quant", "strategy"],
 };
 
 export default function RootLayout({
@@ -30,18 +26,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: dark,
-        variables: {
-          colorPrimary: "#5c7cfa",
-          borderRadius: "0.75rem",
-        },
-      }}
-    >
-      <html lang="en" className="dark">
-        <body className="min-h-screen antialiased">{children}</body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={inter.variable}>
+      <body className="bg-surface-dark-0 text-white antialiased">
+        <ClerkProvider
+          appearance={{ baseTheme: dark }}
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+        >
+          <ConvexClientProvider>
+            <TRPCProvider>{children}</TRPCProvider>
+          </ConvexClientProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
