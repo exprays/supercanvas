@@ -311,7 +311,46 @@ export const strategyRouter = router({
         })
         .where(eq(strategies.id, version.strategyId));
 
-      return { restoredVersion: version.version, newVersion: nextVersion };
+      return {
+        restoredVersion: version.version,
+        newVersion: nextVersion,
+        dagJson: version.dagJson,
+      };
+    }),
+
+  /**
+   * Fetch the full DAG snapshot for a specific version.
+   * Used by the version diff viewer.
+   */
+  getVersionDAG: protectedProcedure
+    .input(z.object({ versionId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const userId = await resolveUserId(ctx.db, ctx.userId);
+
+      const [version] = await ctx.db
+        .select()
+        .from(strategyVersions)
+        .where(eq(strategyVersions.id, input.versionId))
+        .limit(1);
+
+      if (!version) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Version not found." });
+      }
+
+      // Verify ownership via the parent strategy
+      const owned = await ctx.db
+        .select({ id: strategies.id })
+        .from(strategies)
+        .where(
+          and(eq(strategies.id, version.strategyId), eq(strategies.userId, userId))
+        )
+        .limit(1);
+
+      if (!owned.length) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your strategy." });
+      }
+
+      return { dagJson: version.dagJson };
     }),
 
   /**

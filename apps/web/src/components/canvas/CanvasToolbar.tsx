@@ -17,6 +17,7 @@ import {
   Maximize2,
   Play,
   ChevronLeft,
+  History,
 } from "lucide-react";
 import Link from "next/link";
 import { useReactFlow } from "reactflow";
@@ -29,6 +30,8 @@ type SaveState = "saved" | "saving" | "unsaved" | "error";
 interface CanvasToolbarProps {
   onSave: () => Promise<void>;
   onValidate: () => void;
+  onOpenHistory: () => void;
+  onAutoLayout: () => void;
   saveState: SaveState;
   validationErrorCount: number;
 }
@@ -36,18 +39,22 @@ interface CanvasToolbarProps {
 export function CanvasToolbar({
   onSave,
   onValidate,
+  onOpenHistory,
+  onAutoLayout,
   saveState,
   validationErrorCount,
 }: CanvasToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
-  const isDirty = useCanvasStore((s) => s.isDirty);
-  const strategyName = useCanvasStore((s) => s.strategyName);
+  const isDirty = useCanvasStore((s: any) => s.isDirty);
+  const strategyName = useCanvasStore((s: any) => s.strategyName);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(strategyName);
 
-  // Undo/redo - placeholder for now (zundo integration pending)
-  const canUndo = false;
-  const canRedo = false;
+  // Undo/redo from the zundo temporal middleware (runtime available; types are intentionally loose).
+  const canUndo = useCanvasStore((s: any) => Boolean(s.canUndo));
+  const canRedo = useCanvasStore((s: any) => Boolean(s.canRedo));
+  const undo = useCanvasStore((s: any) => s.undo as undefined | (() => void));
+  const redo = useCanvasStore((s: any) => s.redo as undefined | (() => void));
 
   const handleNameBlur = useCallback(() => {
     setIsEditingName(false);
@@ -121,14 +128,20 @@ export function CanvasToolbar({
       {/* Undo / Redo */}
       <div className="flex items-center gap-0.5">
         <ToolbarButton
-          onClick={() => {}}
+          onClick={() => {
+            undo?.();
+            useCanvasStore.setState({ isDirty: true });
+          }}
           disabled={!canUndo}
           title="Undo (Ctrl+Z)"
         >
           <Undo2 className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => {}}
+          onClick={() => {
+            redo?.();
+            useCanvasStore.setState({ isDirty: true });
+          }}
           disabled={!canRedo}
           title="Redo (Ctrl+Y)"
         >
@@ -167,6 +180,23 @@ export function CanvasToolbar({
           <AlertCircle className="h-3.5 w-3.5" />
         )}
         {validationErrorCount > 0 ? `${validationErrorCount} errors` : "Validate"}
+      </button>
+
+      {/* History */}
+      <button
+        onClick={onOpenHistory}
+        className="flex items-center gap-1.5 rounded-lg bg-surface-dark-2 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-surface-dark-3 transition-colors"
+      >
+        <History className="h-3.5 w-3.5" />
+        History
+      </button>
+
+      {/* Auto-layout */}
+      <button
+        onClick={onAutoLayout}
+        className="flex items-center gap-1.5 rounded-lg bg-surface-dark-2 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-surface-dark-3 transition-colors"
+      >
+        Auto-layout
       </button>
 
       {/* Save */}

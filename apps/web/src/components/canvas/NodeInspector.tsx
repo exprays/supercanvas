@@ -9,15 +9,19 @@ import { X, Trash2, Info } from "lucide-react";
 import { NODE_REGISTRY } from "@supercanvas/types";
 import { cn } from "@supercanvas/ui";
 import { useCanvasStore } from "../../lib/canvas-store";
+import { useUser } from "@clerk/nextjs";
 
 export function NodeInspector() {
-  const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
-  const nodes = useCanvasStore((s) => s.nodes);
-  const updateNodeParams = useCanvasStore((s) => s.updateNodeParams);
-  const deleteNode = useCanvasStore((s) => s.deleteNode);
-  const selectNode = useCanvasStore((s) => s.selectNode);
+  const { user } = useUser();
+  const currentUserId = user?.id ?? null;
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+  const selectedNodeId = useCanvasStore((s: any) => s.selectedNodeId);
+  const nodes = useCanvasStore((s: any) => s.nodes);
+  const updateNodeParams = useCanvasStore((s: any) => s.updateNodeParams);
+  const deleteNode = useCanvasStore((s: any) => s.deleteNode);
+  const selectNode = useCanvasStore((s: any) => s.selectNode);
+
+  const selectedNode = nodes.find((n: any) => n.id === selectedNodeId);
 
   if (!selectedNode) {
     return (
@@ -36,6 +40,9 @@ export function NodeInspector() {
 
   const def = NODE_REGISTRY[selectedNode.data.type];
   if (!def) return null;
+
+  const isLockedByOther =
+    !!selectedNode.data.lockedBy && selectedNode.data.lockedBy !== currentUserId;
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-l border-surface-dark-3 bg-surface-dark-1">
@@ -58,6 +65,14 @@ export function NodeInspector() {
         <p className="text-[11px] text-gray-500">{def.description}</p>
       </div>
 
+      {isLockedByOther && (
+        <div className="border-b border-surface-dark-3 px-3 py-2">
+          <p className="text-[11px] text-amber-300">
+            Locked by another user. Editing disabled.
+          </p>
+        </div>
+      )}
+
       {/* Params */}
       <div className="flex-1 overflow-y-auto px-3 py-3">
         {def.params.length === 0 ? (
@@ -72,6 +87,7 @@ export function NodeInspector() {
                 key={param.key}
                 param={param}
                 value={selectedNode.data.params[param.key] ?? param.default}
+                disabled={isLockedByOther}
                 onChange={(val) =>
                   updateNodeParams(selectedNode.id, { [param.key]: val })
                 }
@@ -110,7 +126,8 @@ export function NodeInspector() {
       <div className="border-t border-surface-dark-3 p-3">
         <button
           onClick={() => deleteNode(selectedNode.id)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition-colors hover:border-red-500/40 hover:bg-red-500/20"
+          disabled={isLockedByOther}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition-colors hover:border-red-500/40 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Trash2 className="h-3.5 w-3.5" />
           Delete Node
@@ -126,9 +143,10 @@ interface ParamFieldProps {
   param: { key: string; label: string; type: string; default: unknown; options?: { label: string; value: string | number }[]; min?: number; max?: number; step?: number };
   value: unknown;
   onChange: (val: unknown) => void;
+  disabled?: boolean;
 }
 
-function ParamField({ param, value, onChange }: ParamFieldProps) {
+function ParamField({ param, value, onChange, disabled }: ParamFieldProps) {
   const inputClass =
     "w-full rounded-lg border border-surface-dark-3 bg-surface-dark-2 px-2.5 py-1.5 text-xs text-gray-200 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/20";
 
@@ -141,6 +159,7 @@ function ParamField({ param, value, onChange }: ParamFieldProps) {
           value={String(value)}
           onChange={(e) => onChange(e.target.value)}
           className={cn(inputClass, "cursor-pointer")}
+          disabled={disabled}
         >
           {param.options.map((opt) => (
             <option key={String(opt.value)} value={String(opt.value)}>
@@ -155,6 +174,7 @@ function ParamField({ param, value, onChange }: ParamFieldProps) {
             checked={Boolean(value)}
             onChange={(e) => onChange(e.target.checked)}
             className="h-3.5 w-3.5 rounded border-surface-dark-3 bg-surface-dark-2 text-brand-500"
+            disabled={disabled}
           />
           <span className="text-xs text-gray-400">Enabled</span>
         </label>
@@ -167,6 +187,7 @@ function ParamField({ param, value, onChange }: ParamFieldProps) {
           max={param.max}
           step={param.step ?? 1}
           className={inputClass}
+          disabled={disabled}
         />
       )}
     </div>

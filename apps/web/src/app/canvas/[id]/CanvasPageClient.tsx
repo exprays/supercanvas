@@ -4,8 +4,9 @@
 // Wires tRPC saveDAG + Convex real-time sync into the canvas
 // ─────────────────────────────────────────────
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@supercanvas/convex";
 import { trpc } from "../../../lib/trpc";
 import { StrategyCanvas } from "../../../components/canvas/StrategyCanvas";
@@ -22,9 +23,25 @@ export function CanvasPageClient({
   strategyId,
   initialDAG,
 }: CanvasPageClientProps) {
+  const { user } = useUser();
   const saveDAG = trpc.strategy.saveDAG.useMutation();
   const convexUpsert = useMutation(api.strategies.upsert);
-  const strategyName = useCanvasStore((s) => s.strategyName);
+  // Strategy name in Convex should come from the initial server DAG (not the client store).
+  const dagSlice = { nodes: initialDAG.nodes, edges: initialDAG.edges };
+
+  // Ensure a Convex "strategy" document exists for this editor session.
+  useEffect(() => {
+    if (!user?.id) return;
+    void convexUpsert({
+      externalId: strategyId,
+      userId: user.id,
+      name: initialDAG.name,
+      dagJson: dagSlice,
+      version: initialDAG.version,
+    }).catch(() => {
+      // Presence/node-lock should be non-fatal if Convex sync fails.
+    });
+  }, [convexUpsert, dagSlice.edges, dagSlice.nodes, initialDAG.name, initialDAG.version, strategyId, user?.id]);
 
   const handleSave = useCallback(
     async (toDAG: typeof useCanvasStore.getState.prototype.toDAG) => {
@@ -32,7 +49,7 @@ export function CanvasPageClient({
       const name = useCanvasStore.getState().strategyName;
 
       // ── Persist to PostgreSQL via tRPC ──
-      await saveDAG.mutateAsync({
+      const saved = await saveDAG.mutateAsync({
         id: strategyId,
         name,
         dag: dagSlice,
@@ -42,10 +59,10 @@ export function CanvasPageClient({
       try {
         await convexUpsert({
           externalId: strategyId,
-          userId: "self", // Convex auth will be wired in Phase 1C
+          userId: user?.id ?? "unknown",
           name,
           dagJson: dagSlice,
-          version: 1,
+          version: saved.version,
         });
       } catch (err) {
         // Convex sync failure is non-fatal — Postgres is the source of truth
@@ -53,7 +70,7 @@ export function CanvasPageClient({
         console.warn("Convex sync failed (non-fatal):", err);
       }
     },
-    [strategyId, saveDAG, convexUpsert]
+    [strategyId, saveDAG, convexUpsert, user?.id]
   );
 
   return (

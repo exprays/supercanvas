@@ -36,6 +36,7 @@ interface CanvasState {
   isDirty: boolean;
   strategyId: string | null;
   strategyName: string;
+  currentUserId: string | null;
 
   // ── Actions ──
   setNodes: (nodes: CanvasNode[]) => void;
@@ -51,12 +52,13 @@ interface CanvasState {
   toDAG: () => Omit<StrategyDAG, "id" | "name" | "version" | "metadata">;
   markSaved: () => void;
   setStrategyMeta: (id: string, name: string) => void;
+  setCurrentUserId: (id: string) => void;
 }
 
 let nodeIdCounter = 1;
 const genId = () => `node_${Date.now()}_${nodeIdCounter++}`;
 
-export const useCanvasStore = create<CanvasState>()(
+export const useCanvasStore: any = create<CanvasState>()(
   temporal(
     (set, get) => ({
       nodes: [],
@@ -65,6 +67,7 @@ export const useCanvasStore = create<CanvasState>()(
       isDirty: false,
       strategyId: null,
       strategyName: "Untitled Strategy",
+      currentUserId: null,
 
       setNodes: (nodes) => set({ nodes, isDirty: true }),
       setEdges: (edges) => set({ edges, isDirty: true }),
@@ -88,8 +91,19 @@ export const useCanvasStore = create<CanvasState>()(
         const { nodes } = get();
         const sourceNode = nodes.find((n) => n.id === connection.source);
         const targetNode = nodes.find((n) => n.id === connection.target);
+        const currentUserId = get().currentUserId;
 
         if (!sourceNode || !targetNode) return;
+
+        // Prevent connecting locked nodes edited by someone else.
+        if (
+          (sourceNode.data.lockedBy &&
+            sourceNode.data.lockedBy !== currentUserId) ||
+          (targetNode.data.lockedBy &&
+            targetNode.data.lockedBy !== currentUserId)
+        ) {
+          return;
+        }
 
         const sourceDef = NODE_REGISTRY[sourceNode.data.type];
         const targetDef = NODE_REGISTRY[targetNode.data.type];
@@ -128,12 +142,14 @@ export const useCanvasStore = create<CanvasState>()(
           id: genId(),
           type: "strategyNode",   // React Flow custom node component type
           position,
+          draggable: true,
           data: {
             type,
             label: def.label,
             params: Object.fromEntries(
               def.params.map((p) => [p.key, p.default])
             ),
+            lockedBy: undefined,
           },
         };
 
@@ -144,6 +160,10 @@ export const useCanvasStore = create<CanvasState>()(
       },
 
       updateNodeParams: (nodeId, params) => {
+        const node = get().nodes.find((n) => n.id === nodeId);
+        const currentUserId = get().currentUserId;
+        if (node?.data.lockedBy && node.data.lockedBy !== currentUserId) return;
+
         set((state) => ({
           nodes: state.nodes.map((n) =>
             n.id === nodeId
@@ -155,6 +175,10 @@ export const useCanvasStore = create<CanvasState>()(
       },
 
       deleteNode: (nodeId) => {
+        const node = get().nodes.find((n) => n.id === nodeId);
+        const currentUserId = get().currentUserId;
+        if (node?.data.lockedBy && node.data.lockedBy !== currentUserId) return;
+
         set((state) => ({
           nodes: state.nodes.filter((n) => n.id !== nodeId),
           edges: state.edges.filter(
@@ -173,10 +197,12 @@ export const useCanvasStore = create<CanvasState>()(
           id: n.id,
           type: "strategyNode",
           position: n.position,
+          draggable: true,
           data: {
             type: n.type,
             label: n.label,
             params: n.params,
+            lockedBy: undefined,
           },
         }));
 
@@ -216,10 +242,18 @@ export const useCanvasStore = create<CanvasState>()(
 
       markSaved: () => set({ isDirty: false }),
       setStrategyMeta: (id, name) => set({ strategyId: id, strategyName: name }),
+      setCurrentUserId: (id) => set({ currentUserId: id }),
     }),
     {
       // Track undo/redo for nodes and edges only
-      partialize: (state) => ({ nodes: state.nodes, edges: state.edges }),
+      partialize: (state) => ({
+        nodes: state.nodes.map((n) => ({
+          ...n,
+          draggable: undefined,
+          data: { ...n.data, lockedBy: undefined },
+        })),
+        edges: state.edges,
+      }),
       limit: 50,
     }
   )

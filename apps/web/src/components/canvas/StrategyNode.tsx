@@ -36,8 +36,8 @@ export const StrategyNodeComponent = memo(function StrategyNodeComponent({
   selected,
 }: NodeProps<NodeData>) {
   const def = NODE_REGISTRY[data.type];
-  const selectNode = useCanvasStore((s) => s.selectNode);
-  const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+  const selectNode = useCanvasStore((s: any) => s.selectNode);
+  const selectedNodeId = useCanvasStore((s: any) => s.selectedNodeId);
 
   const handleClick = useCallback(() => {
     selectNode(id);
