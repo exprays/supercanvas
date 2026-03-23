@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package backtest;
+
+option go_package = "github.com/supercanvas/backtest-engine/internal/pb";
+
+// ─── Messages ───────────────────────────────────────────────────────────────
+
+message BacktestRequest {
+  string backtest_id = 1;
+  string strategy_id = 2;
+  string dag_json = 3;           // Full strategy DAG as JSON string
+  BacktestConfig config = 4;
+}
+
+message BacktestConfig {
+  repeated string symbols = 1;
+  string start_date = 2;         // ISO 8601 date
+  string end_date = 3;
+  string resolution = 4;        // "daily" | "minute"
+  double initial_capital = 5;
+  string currency = 6;
+  SlippageModel slippage = 7;
+  FeeSchedule fees = 8;
+}
+
+message SlippageModel {
+  string type = 1;               // "fixed" | "percentage" | "market_impact"
+  double value = 2;
+}
+
+message FeeSchedule {
+  double maker_fee = 1;
+  double taker_fee = 2;
+}
+
+message EquityPoint {
+  string timestamp = 1;
+  double equity = 2;
+  double drawdown = 3;
+  double cash = 4;
+}
+
+message Trade {
+  string timestamp = 1;
+  string symbol = 2;
+  string side = 3;               // "buy" | "sell"
+  double quantity = 4;
+  double price = 5;
+  double fees = 6;
+  double slippage = 7;
+  double pnl = 8;
+}
+
+message BacktestMetrics {
+  double total_return = 1;
+  double annualized_return = 2;
+  double sharpe_ratio = 3;
+  double sortino_ratio = 4;
+  double calmar_ratio = 5;
+  double max_drawdown = 6;
+  double max_drawdown_duration = 7;
+  double win_rate = 8;
+  double profit_factor = 9;
+  int32  total_trades = 10;
+  double avg_trade_duration = 11;
+  double volatility = 12;
+}
+
+// Streamed periodically during backtest execution
+message BacktestProgressEvent {
+  string backtest_id = 1;
+  string status = 2;            // "queued" | "running" | "completed" | "failed"
+  double progress = 3;          // 0-100
+  string current_date = 4;
+  repeated EquityPoint partial_equity_curve = 5;
+  BacktestMetrics metrics_snapshot = 6;
+  string error_message = 7;
+}
+
+message BacktestResult {
+  string backtest_id = 1;
+  string status = 2;
+  BacktestMetrics metrics = 3;
+  repeated EquityPoint equity_curve = 4;
+  repeated Trade trades = 5;
+  bytes result_msgpack = 6;     // Full result as MessagePack
+  int32 credits_used = 7;
+}
+
+message ResultRequest {
+  string backtest_id = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string version = 2;
+  int32  active_backtests = 3;
+}
+
+// ─── Service ────────────────────────────────────────────────────────────────
+
+service BacktestService {
+  // Server-streaming: runs backtest and streams progress events
+  rpc RunBacktest(BacktestRequest) returns (stream BacktestProgressEvent);
+
+  // Fetch completed result
+  rpc GetResults(ResultRequest) returns (BacktestResult);
+
+  // Health check
+  rpc GetHealth(HealthRequest) returns (HealthResponse);
+}
