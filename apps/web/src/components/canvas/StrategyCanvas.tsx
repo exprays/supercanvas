@@ -491,7 +491,7 @@ function CanvasInner({ strategyId, initialDAG, onSave }: StrategyCanvasProps) {
           onMouseMove={handleMouseMove}
         >
           <ReactFlow
-            {...({ onNodeMouseDown: handleNodeMouseDown } as any)}
+            onNodeMouseDown={handleNodeMouseDown as any}
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}

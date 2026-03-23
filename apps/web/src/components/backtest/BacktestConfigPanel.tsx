@@ -11,7 +11,7 @@ import { Play, X, Zap, Calendar, DollarSign, BarChart3, Settings2 } from "lucide
 import { trpc } from "../../lib/trpc";
 import { useCanvasStore } from "../../lib/canvas-store";
 import { useRouter } from "next/navigation";
-import gsap from "gsap";
+import { toast } from "sonner";
 
 interface BacktestConfigPanelProps {
   onClose: () => void;
@@ -19,9 +19,6 @@ interface BacktestConfigPanelProps {
 }
 
 export function BacktestConfigPanel({ onClose, strategyId }: BacktestConfigPanelProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
   const [symbols, setSymbols] = useState("AAPL");
@@ -51,38 +48,19 @@ export function BacktestConfigPanel({ onClose, strategyId }: BacktestConfigPanel
     { refetchOnWindowFocus: false }
   );
 
-  // GSAP entrance
-  useEffect(() => {
-    const tl = gsap.timeline();
-    tl.from(overlayRef.current, { opacity: 0, duration: 0.25, ease: "power2.out" });
-    tl.from(panelRef.current, {
-      x: 400,
-      opacity: 0,
-      duration: 0.4,
-      ease: "power3.out",
-    }, "-=0.15");
-
-    // Pulse animation on submit button
-    if (buttonRef.current) {
-      gsap.to(buttonRef.current, {
-        scale: 1.02,
-        duration: 1.5,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-    }
-
-    return () => { tl.kill(); };
-  }, []);
-
   const handleClose = () => {
-    const tl = gsap.timeline({ onComplete: onClose });
-    tl.to(panelRef.current, { x: 400, opacity: 0, duration: 0.3, ease: "power2.in" });
-    tl.to(overlayRef.current, { opacity: 0, duration: 0.2 }, "-=0.15");
+    onClose();
   };
 
   const handleSubmit = async () => {
+    console.info("[backtest] submit clicked", {
+      strategyId,
+      symbols,
+      startDate,
+      endDate,
+      resolution,
+    });
+    toast.loading("Submitting backtest...", { id: "backtest-submit" });
     try {
       const result = await submitMutation.mutateAsync({
         strategyId,
@@ -97,32 +75,28 @@ export function BacktestConfigPanel({ onClose, strategyId }: BacktestConfigPanel
         },
       });
 
-      // Flash success animation
-      if (buttonRef.current) {
-        gsap.to(buttonRef.current, {
-          backgroundColor: "#10b981",
-          scale: 1.05,
-          duration: 0.3,
-          yoyo: true,
-          repeat: 1,
-        });
-      }
-
-      // Close and navigate to results after brief delay
-      setTimeout(() => {
-        handleClose();
-        router.push(`/backtests/${result.backtestId}`);
-      }, 800);
+      handleClose();
+      console.info("[backtest] submitted", { backtestId: result.backtestId, cached: result.cached });
+      toast.dismiss("backtest-submit");
+      toast.success("Backtest started", {
+        description: "Opening live result page...",
+      });
+      router.push(`/backtests/${result.backtestId}`);
     } catch (err) {
-      // Error handled by tRPC
+      console.error("Backtest submission failed:", err);
+      toast.dismiss("backtest-submit");
+      const message =
+        err instanceof Error ? err.message : "Could not start backtest. Please try again.";
+      toast.error("Backtest failed", { description: message });
     }
   };
 
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/50 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[9999] flex items-stretch justify-end bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       <div
-        ref={panelRef}
-        className="w-full max-w-md border-l border-surface-dark-3 bg-surface-dark-1 shadow-2xl overflow-y-auto"
+        className="w-full max-w-md overflow-y-auto border-l border-surface-dark-3 bg-surface-dark-1 shadow-2xl animate-in slide-in-from-right duration-300"
       >
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-surface-dark-3 bg-surface-dark-1/95 backdrop-blur-sm px-5 py-4">
@@ -257,7 +231,7 @@ export function BacktestConfigPanel({ onClose, strategyId }: BacktestConfigPanel
 
           {/* Submit */}
           <button
-            ref={buttonRef}
+            type="button"
             onClick={handleSubmit}
             disabled={submitMutation.isPending}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 hover:shadow-brand-500/40 transition-all disabled:opacity-60"

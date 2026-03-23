@@ -5,7 +5,6 @@
 // Recharts AreaChart with GSAP animated entrance
 // ─────────────────────────────────────────────
 
-import { useEffect, useRef } from "react";
 import {
   AreaChart,
   Area,
@@ -15,7 +14,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import gsap from "gsap";
 
 interface EquityPoint {
   timestamp: string;
@@ -30,29 +28,6 @@ interface EquityCurveChartProps {
 }
 
 export function EquityCurveChart({ data, initialCapital = 100000 }: EquityCurveChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current || data.length === 0) return;
-
-    gsap.from(containerRef.current, {
-      opacity: 0,
-      y: 30,
-      duration: 0.6,
-      ease: "power3.out",
-    });
-
-    // Animate the chart paths
-    const paths = containerRef.current.querySelectorAll(".recharts-area-area, .recharts-area-curve");
-    paths.forEach((path) => {
-      const length = (path as SVGPathElement).getTotalLength?.() ?? 1000;
-      gsap.fromTo(
-        path,
-        { strokeDasharray: length, strokeDashoffset: length },
-        { strokeDashoffset: 0, duration: 1.5, ease: "power2.out", delay: 0.3 }
-      );
-    });
-  }, [data]);
 
   const formatDate = (ts: string) => {
     const d = new Date(ts);
@@ -71,7 +46,7 @@ export function EquityCurveChart({ data, initialCapital = 100000 }: EquityCurveC
   }));
 
   return (
-    <div ref={containerRef} className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 p-4">
+    <div className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-white">Equity Curve</h3>
         <div className="flex items-center gap-3 text-[10px]">

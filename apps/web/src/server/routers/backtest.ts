@@ -58,7 +58,20 @@ async function resolveUserId(db: any, clerkId: string): Promise<string> {
 }
 
 function computeConfigHash(strategyId: string, dagJson: any, config: any): string {
-  const payload = JSON.stringify({ strategyId, dagJson, config }, Object.keys({ strategyId, dagJson, config }).sort());
+  const stableStringify = (value: unknown): string => {
+    if (value === null || value === undefined) return String(value);
+    if (typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) {
+      return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+    }
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+    return `{${entries
+      .map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`)
+      .join(",")}}`;
+  };
+  const payload = stableStringify({ strategyId, dagJson, config });
   return crypto.createHash("sha256").update(payload).digest("hex").slice(0, 12);
 }
 

@@ -5,7 +5,6 @@
 // Recharts AreaChart with red gradient and GSAP animation
 // ─────────────────────────────────────────────
 
-import { useEffect, useRef } from "react";
 import {
   AreaChart,
   Area,
@@ -16,7 +15,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import gsap from "gsap";
 
 interface EquityPoint {
   timestamp: string;
@@ -31,29 +29,16 @@ interface DrawdownChartProps {
 }
 
 export function DrawdownChart({ data, maxDrawdown }: DrawdownChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const chartData = data.map((d) => ({
     date: new Date(d.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
     drawdown: -(d.drawdown * 100), // negative for visual
     timestamp: d.timestamp,
   }));
 
-  useEffect(() => {
-    if (!containerRef.current || data.length === 0) return;
-    gsap.from(containerRef.current, {
-      opacity: 0,
-      y: 30,
-      duration: 0.6,
-      ease: "power3.out",
-      delay: 0.2,
-    });
-  }, [data]);
-
   const maxDDValue = maxDrawdown ? -(maxDrawdown * 100) : undefined;
 
   return (
-    <div ref={containerRef} className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 p-4">
+    <div className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-white">Drawdown</h3>
         {maxDrawdown !== undefined && (

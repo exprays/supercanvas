@@ -70,6 +70,20 @@ async function resolveUserId(db: any, clerkId: string): Promise<string> {
   return result[0].id;
 }
 
+function stableStringify(value: unknown): string {
+  if (value === null || value === undefined) return String(value);
+  if (typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  return `{${entries
+    .map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`)
+    .join(",")}}`;
+}
+
 // ── Router ────────────────────────────────────────────────────────────────
 
 export const strategyRouter = router({
@@ -196,7 +210,8 @@ export const strategyRouter = router({
       }
 
       const currentVersion = existing[0].version;
-      const isChanged = JSON.stringify(input.dag) !== JSON.stringify(existing[0].dagJson);
+      const isChanged =
+        stableStringify(input.dag) !== stableStringify(existing[0].dagJson);
       
       const nextVersion = isChanged ? currentVersion + 1 : currentVersion;
 
@@ -204,7 +219,7 @@ export const strategyRouter = router({
         // Save version snapshot
         await ctx.db.insert(strategyVersions).values({
           strategyId: input.id,
-          dagJson: input.dag,
+          dagJson: existing[0].dagJson,
           version: currentVersion,
           message: input.versionMessage ?? `Version ${currentVersion}`,
         });
@@ -305,6 +320,28 @@ export const strategyRouter = router({
       }
 
       const nextVersion = owned[0].version + 1;
+
+      // Preserve current working state before restoring.
+      const [currentStrategy] = await ctx.db
+        .select({ dagJson: strategies.dagJson, version: strategies.version })
+        .from(strategies)
+        .where(eq(strategies.id, version.strategyId))
+        .limit(1);
+
+      if (!currentStrategy) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Strategy not found." });
+      }
+
+      const isRestoreChanged =
+        stableStringify(currentStrategy.dagJson) !== stableStringify(version.dagJson);
+      if (isRestoreChanged) {
+        await ctx.db.insert(strategyVersions).values({
+          strategyId: version.strategyId,
+          dagJson: currentStrategy.dagJson,
+          version: currentStrategy.version,
+          message: `Auto-snapshot before restoring v${version.version}`,
+        });
+      }
 
       await ctx.db
         .update(strategies)

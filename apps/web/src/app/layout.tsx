@@ -9,6 +9,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ConvexClientProvider } from "../components/providers/ConvexClientProvider";
 import { TRPCProvider } from "../components/providers/TRPCProvider";
+import { Toaster } from "sonner";
+import "sonner/dist/styles.css";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -34,7 +36,15 @@ export default function RootLayout({
           signUpUrl="/sign-up"
         >
           <ConvexClientProvider>
-            <TRPCProvider>{children}</TRPCProvider>
+            <TRPCProvider>
+              {children}
+              <Toaster
+                theme="dark"
+                position="top-right"
+                richColors
+                closeButton
+              />
+            </TRPCProvider>
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

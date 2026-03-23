@@ -10,7 +10,6 @@ import { Loader2, RotateCcw, GitBranch, GitCommit } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import type { StrategyDAG } from "@supercanvas/types";
 import { cn } from "@supercanvas/ui";
-import gsap from "gsap";
 
 type DagSlice = Omit<StrategyDAG, "id" | "name" | "version" | "metadata">;
 
@@ -105,9 +104,6 @@ export function VersionHistoryModal({
   onClose: () => void;
   onRestore: (args: { dagJson: DagSlice; restoredVersion: number }) => Promise<void>;
 }) {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const diffRef = useRef<HTMLDivElement>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     added: true,
     removed: true,
@@ -145,65 +141,15 @@ export function VersionHistoryModal({
 
   const restoreMutation = trpc.strategy.restoreVersion.useMutation();
 
-  // ── GSAP: Modal entrance ──
-  useEffect(() => {
-    if (!modalRef.current) return;
-    const tl = gsap.timeline();
-    tl.fromTo(modalRef.current, {
-      opacity: 0,
-      scale: 0.95,
-    }, {
-      opacity: 1,
-      scale: 1,
-      duration: 0.35,
-      ease: "power3.out",
-    });
-  }, []);
-
-  // ── GSAP: Timeline nodes stagger ──
-  useEffect(() => {
-    if (!timelineRef.current || versions.length === 0) return;
-    const nodes = timelineRef.current.querySelectorAll(".timeline-node");
-    gsap.from(nodes, {
-      opacity: 0,
-      x: -20,
-      duration: 0.3,
-      stagger: 0.05,
-      ease: "power2.out",
-    });
-  }, [versions]);
-
-  // ── GSAP: Diff cards entrance when selection changes ──
-  useEffect(() => {
-    if (!diffRef.current || !diff) return;
-    const cards = diffRef.current.querySelectorAll(".diff-card");
-    gsap.from(cards, {
-      opacity: 0,
-      y: 20,
-      duration: 0.35,
-      stagger: 0.04,
-      ease: "power2.out",
-    });
-  }, [diff, effectiveSelectedVersionId]);
-
   const toggleSection = (section: string) => {
-    const el = document.getElementById(`diff-section-${section}`);
-    const isExpanding = !expandedSections[section];
-
-    if (el) {
-      if (isExpanding) {
-        gsap.fromTo(el, { height: 0, opacity: 0 }, { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" });
-      } else {
-        gsap.to(el, { height: 0, opacity: 0, duration: 0.2, ease: "power2.in" });
-      }
-    }
-
-    setExpandedSections((prev) => ({ ...prev, [section]: isExpanding }));
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div ref={modalRef} className="w-full max-w-4xl rounded-2xl border border-surface-dark-3 bg-surface-dark-1 shadow-2xl">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className="flex h-[min(84vh,760px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-surface-dark-3 bg-surface-dark-1 shadow-2xl animate-in fade-in zoom-in-95 duration-300"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-surface-dark-3 px-5 py-4">
           <div className="flex items-center gap-2">
@@ -224,9 +170,11 @@ export function VersionHistoryModal({
         </div>
 
         {/* Body */}
-        <div className="grid grid-cols-5 gap-0" style={{ maxHeight: "70vh" }}>
+        <div className="grid min-h-0 flex-1 grid-cols-5 gap-0">
           {/* Git-style Timeline */}
-          <div ref={timelineRef} className="col-span-2 border-r border-surface-dark-3 px-4 py-4 overflow-y-auto">
+          <div
+            className="col-span-2 min-h-0 overflow-y-auto border-r border-surface-dark-3 px-4 py-4"
+          >
             {versionsQuery.isLoading ? (
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -310,7 +258,7 @@ export function VersionHistoryModal({
           </div>
 
           {/* Diff Panel */}
-          <div ref={diffRef} className="col-span-3 px-4 py-4 overflow-y-auto">
+          <div className="col-span-3 min-h-0 overflow-y-auto px-4 py-4">
             {!selectedDagQuery.isLoading && !selectedDag ? (
               <p className="text-xs text-gray-500">Select a version to view diff.</p>
             ) : null}

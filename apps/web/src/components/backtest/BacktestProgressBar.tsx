@@ -6,7 +6,6 @@
 // ─────────────────────────────────────────────
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
 import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 interface BacktestProgressBarProps {
@@ -24,43 +23,11 @@ export function BacktestProgressBar({
   currentDate,
   onComplete,
 }: BacktestProgressBarProps) {
-  const barRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef(0);
-
-  // Animate entrance
   useEffect(() => {
-    if (!containerRef.current) return;
-    gsap.from(containerRef.current, {
-      opacity: 0,
-      y: -10,
-      height: 0,
-      duration: 0.4,
-      ease: "power2.out",
-    });
-  }, []);
-
-  // Animate progress bar fill
-  useEffect(() => {
-    if (!barRef.current) return;
-
-    gsap.to(barRef.current, {
-      width: `${Math.min(progress, 100)}%`,
-      duration: 0.5,
-      ease: "power2.out",
-    });
-
-    progressRef.current = progress;
-
     if (progress >= 100 && status === "completed") {
-      // Success flash
-      gsap.to(barRef.current, {
-        backgroundColor: "#10b981",
-        duration: 0.3,
-      });
       onComplete?.();
     }
-  }, [progress, status]);
+  }, [progress, status, onComplete]);
 
   const statusConfig = {
     queued: { icon: <Clock className="h-3.5 w-3.5" />, color: "text-amber-400", label: "Queued" },
@@ -71,8 +38,7 @@ export function BacktestProgressBar({
 
   return (
     <div
-      ref={containerRef}
-      className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 px-4 py-3 overflow-hidden"
+      className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 px-4 py-3 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300"
     >
       <div className="mb-2 flex items-center justify-between">
         <div className={`flex items-center gap-1.5 ${statusConfig.color}`}>
@@ -94,9 +60,12 @@ export function BacktestProgressBar({
       {/* Progress bar track */}
       <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface-dark-3">
         <div
-          ref={barRef}
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-brand-600 to-brand-400 transition-none"
-          style={{ width: "0%" }}
+          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${
+            progress >= 100 && status === "completed"
+              ? "bg-emerald-500"
+              : "bg-gradient-to-r from-brand-600 to-brand-400"
+          }`}
+          style={{ width: `${Math.min(progress, 100)}%` }}
         />
         {/* Animated shimmer */}
         {status === "running" && (

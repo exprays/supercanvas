@@ -5,8 +5,7 @@
 // GSAP staggered row entrance, sortable columns, colour-coded P&L
 // ─────────────────────────────────────────────
 
-import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
+import { useState } from "react";
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 
 interface Trade {
@@ -28,7 +27,6 @@ type SortKey = keyof Trade;
 type SortDir = "asc" | "desc";
 
 export function TradeLogTable({ trades }: TradeLogTableProps) {
-  const tableRef = useRef<HTMLDivElement>(null);
   const [sortKey, setSortKey] = useState<SortKey>("timestamp");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -42,19 +40,6 @@ export function TradeLogTable({ trades }: TradeLogTableProps) {
       ? String(aVal).localeCompare(String(bVal))
       : String(bVal).localeCompare(String(aVal));
   });
-
-  useEffect(() => {
-    if (!tableRef.current) return;
-
-    const rows = tableRef.current.querySelectorAll("tbody tr");
-    gsap.from(rows, {
-      opacity: 0,
-      x: -15,
-      duration: 0.3,
-      stagger: 0.03,
-      ease: "power2.out",
-    });
-  }, [trades, sortKey, sortDir]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -86,7 +71,7 @@ export function TradeLogTable({ trades }: TradeLogTableProps) {
   ];
 
   return (
-    <div ref={tableRef} className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 overflow-hidden">
+    <div className="rounded-xl border border-surface-dark-3 bg-surface-dark-2 overflow-hidden animate-in fade-in duration-300">
       <div className="px-4 py-3 border-b border-surface-dark-3">
         <h3 className="text-sm font-semibold text-white">Trade Log</h3>
         <p className="text-[10px] text-gray-500">{trades.length} trades executed</p>
@@ -132,31 +117,31 @@ export function TradeLogTable({ trades }: TradeLogTableProps) {
                         : "bg-red-500/10 text-red-400"
                     }`}
                   >
-                    {trade.side.toUpperCase()}
+                    {(trade.side || "UNKNOWN").toUpperCase()}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-[11px] text-gray-300 text-right font-mono">
-                  {trade.quantity.toFixed(2)}
+                  {(trade.quantity ?? 0).toFixed(2)}
                 </td>
                 <td className="px-3 py-2 text-[11px] text-gray-300 text-right font-mono">
-                  ${trade.price.toFixed(2)}
+                  ${(trade.price ?? 0).toFixed(2)}
                 </td>
                 <td className="px-3 py-2 text-[11px] text-gray-500 text-right font-mono">
-                  ${trade.fees.toFixed(2)}
+                  ${(trade.fees ?? 0).toFixed(2)}
                 </td>
                 <td className="px-3 py-2 text-[11px] text-gray-500 text-right font-mono">
-                  ${trade.slippage.toFixed(4)}
+                  ${(trade.slippage ?? 0).toFixed(4)}
                 </td>
                 <td
                   className={`px-3 py-2 text-[11px] text-right font-mono font-semibold ${
-                    trade.pnl > 0
+                    (trade.pnl ?? 0) > 0
                       ? "text-emerald-400"
-                      : trade.pnl < 0
+                      : (trade.pnl ?? 0) < 0
                       ? "text-red-400"
                       : "text-gray-500"
                   }`}
                 >
-                  {trade.pnl > 0 ? "+" : ""}${trade.pnl.toFixed(2)}
+                  {(trade.pnl ?? 0) > 0 ? "+" : ""}${(trade.pnl ?? 0).toFixed(2)}
                 </td>
               </tr>
             ))}

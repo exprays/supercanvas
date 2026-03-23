@@ -74,10 +74,12 @@ export function CanvasPageClient({
   );
 
   return (
-    <StrategyCanvas
-      strategyId={strategyId}
-      initialDAG={initialDAG}
-      onSave={handleSave}
-    />
+    <div className="h-full min-h-0">
+      <StrategyCanvas
+        strategyId={strategyId}
+        initialDAG={initialDAG}
+        onSave={handleSave}
+      />
+    </div>
   );
 }
