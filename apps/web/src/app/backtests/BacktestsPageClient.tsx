@@ -29,6 +29,7 @@ type StatusFilter = "all" | "completed" | "running" | "queued" | "failed";
 export function BacktestsPageClient() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
+  const { data: userProfile } = trpc.user.me.useQuery();
   const { data, isLoading } = trpc.backtest.list.useQuery({
     limit: 50,
   });
@@ -63,7 +64,15 @@ export function BacktestsPageClient() {
             <div className="h-4 w-px bg-surface-dark-3" />
             <span className="text-sm font-semibold text-white">Backtests</span>
           </div>
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex items-center gap-4">
+            {userProfile && (
+              <div className="badge-info flex items-center gap-1.5">
+                <Zap className="h-3 w-3" />
+                {userProfile.creditsRemaining} credits
+              </div>
+            )}
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
       </nav>
 

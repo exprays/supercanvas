@@ -222,31 +222,54 @@ export const runBacktest = inngest.createFunction(
     });
 
     // Step 3 — Store results (DB)
-    await step.run("store-results", async () => {
+    const storeData = await step.run("store-results", async () => {
       const { eq } = await import("drizzle-orm");
       const { getDb, backtests } = await import("@supercanvas/db");
       const db = getDb();
 
-      const metricsJson = backtestResult.Metrics || {};
-      const equityCurveJson = backtestResult.EquityCurve || [];
-      const tradesJson = backtestResult.Trades || [];
+      const metricsJson = backtestResult.Metrics ? {
+        totalReturn: backtestResult.Metrics.TotalReturn,
+        annualizedReturn: backtestResult.Metrics.AnnualizedReturn,
+        sharpeRatio: backtestResult.Metrics.SharpeRatio,
+        sortinoRatio: backtestResult.Metrics.SortinoRatio,
+        calmarRatio: backtestResult.Metrics.CalmarRatio,
+        maxDrawdown: backtestResult.Metrics.MaxDrawdown,
+        winRate: backtestResult.Metrics.WinRate,
+        profitFactor: backtestResult.Metrics.ProfitFactor,
+        totalTrades: backtestResult.Metrics.TotalTrades,
+        avgTradeDuration: backtestResult.Metrics.AvgTradeDuration,
+        volatility: backtestResult.Metrics.Volatility,
+      } : {};
+
+      const equityCurveJson = (backtestResult.EquityCurve || []).map((ep: any) => ({
+        timestamp: ep.Timestamp,
+        equity: ep.Equity,
+        drawdown: ep.Drawdown,
+        cash: ep.Cash,
+      }));
+
+      const tradesJson = (backtestResult.Trades || []).map((t: any) => ({
+        timestamp: t.Timestamp,
+        symbol: t.Symbol,
+        side: t.Side,
+        quantity: t.Quantity,
+        price: t.Price,
+        fees: t.Fees,
+        slippage: t.Slippage,
+        pnl: t.PnL ?? t.Pnl ?? 0,
+      }));
 
       await db
         .update(backtests)
         .set({
           status: "completed",
           completedAt: new Date(),
-          // Since we don't have dedicated columns for these in Phase 2, we store them in JSON.
-          // In production, these should go to S3/R2. For now, we update the existing row with extra data.
-          // As a workaround, we cast them directly to the any type to bypass Drizzle schema checks if they exist,
-          // but actually we need to add them to the schema first, or use a separate table.
-          // Since schema only has metricsJson, we'll store them as stringified blobs if we must,
-          // OR we can just fetch them via Convex for Phase 2. Let's just update what we have:
           metricsJson: { ...metricsJson, _equityCurve: equityCurveJson, _trades: tradesJson },
         })
         .where(eq(backtests.id, backtestId));
 
       return {
+        metricsJson,
         metrics: backtestResult.Metrics,
         trades: tradesJson.length,
         equityPoints: equityCurveJson.length,
@@ -282,7 +305,7 @@ export const runBacktest = inngest.createFunction(
                 progress: 100,
                 currentDate: config.endDate,
                 equityCurve: sampledCurve,
-                metrics: backtestResult.Metrics ?? null,
+                metrics: storeData.metricsJson,
               },
             }),
           });

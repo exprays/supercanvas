@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Loader2,
   ChevronLeft,
+  Zap,
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { trpc } from "../../lib/trpc";
@@ -32,6 +33,7 @@ export function StrategiesPageClient() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
+  const { data: userProfile } = trpc.user.me.useQuery();
   const { data: strategies, isLoading, refetch } = trpc.strategy.list.useQuery();
   const createMutation = trpc.strategy.create.useMutation({
     onSuccess: (strategy) => {
@@ -65,7 +67,15 @@ export function StrategiesPageClient() {
             <div className="h-4 w-px bg-surface-dark-3" />
             <span className="text-sm font-semibold text-white">Strategies</span>
           </div>
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex items-center gap-4">
+            {userProfile && (
+              <div className="badge-info flex items-center gap-1.5">
+                <Zap className="h-3 w-3" />
+                {userProfile.creditsRemaining} credits
+              </div>
+            )}
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
       </nav>
 

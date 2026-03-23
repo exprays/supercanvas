@@ -18,11 +18,13 @@ import {
   Play,
   ChevronLeft,
   History,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useReactFlow } from "reactflow";
 import { cn } from "@supercanvas/ui";
 import { useCanvasStore } from "../../lib/canvas-store";
+import { trpc } from "../../lib/trpc";
 
 
 type SaveState = "saved" | "saving" | "unsaved" | "error";
@@ -46,6 +48,7 @@ export function CanvasToolbar({
   saveState,
   validationErrorCount,
 }: CanvasToolbarProps) {
+  const { data: userProfile } = trpc.user.me.useQuery();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const isDirty = useCanvasStore((s: any) => s.isDirty);
   const strategyName = useCanvasStore((s: any) => s.strategyName);
@@ -200,6 +203,14 @@ export function CanvasToolbar({
       >
         Auto-layout
       </button>
+
+      {/* Credits */}
+      {userProfile && (
+        <div className="flex items-center gap-1.5 rounded-lg border border-brand-500/20 bg-brand-500/10 px-3 py-1.5 text-xs font-semibold text-brand-300">
+          <Zap className="h-3.5 w-3.5" />
+          {userProfile.creditsRemaining} credits
+        </div>
+      )}
 
       {/* Save */}
       <button
