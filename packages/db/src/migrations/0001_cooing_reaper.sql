@@ -1,0 +1,1 @@
+ALTER TABLE "backtests" ADD COLUMN "dag_snapshot" jsonb;

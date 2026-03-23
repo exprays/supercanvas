@@ -142,6 +142,7 @@ export const backtests = pgTable(
     resolution: backtestResolutionEnum("resolution").notNull(),
     resultUrl: text("result_url"),
     metricsJson: jsonb("metrics_json"),
+    dagSnapshot: jsonb("dag_snapshot"),  // Strategy DAG at time of submission
     creditsUsed: integer("credits_used").default(0).notNull(),
     errorMessage: text("error_message"),
     startedAt: timestamp("started_at"),

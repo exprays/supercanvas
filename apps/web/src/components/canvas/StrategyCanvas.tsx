@@ -34,6 +34,7 @@ import { NodeInspector } from "./NodeInspector";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { ValidationPanel } from "./ValidationPanel";
 import { VersionHistoryModal } from "./VersionHistoryModal";
+import { BacktestConfigPanel } from "../backtest/BacktestConfigPanel";
 import type { StrategyDAG } from "@supercanvas/types";
 
 // Register custom node types once — outside component to avoid re-render
@@ -52,6 +53,7 @@ function CanvasInner({ strategyId, initialDAG, onSave }: StrategyCanvasProps) {
   const [showValidation, setShowValidation] = useState(false);
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateDAG> | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showBacktestPanel, setShowBacktestPanel] = useState(false);
 
   const { user } = useUser();
   const currentUserId = user?.id ?? null;
@@ -471,6 +473,7 @@ function CanvasInner({ strategyId, initialDAG, onSave }: StrategyCanvasProps) {
         onValidate={handleValidate}
         onOpenHistory={() => setShowHistory(true)}
         onAutoLayout={handleAutoLayout}
+        onRunBacktest={() => setShowBacktestPanel(true)}
         saveState={saveState}
         validationErrorCount={validationErrorCount}
       />
@@ -593,20 +596,29 @@ function CanvasInner({ strategyId, initialDAG, onSave }: StrategyCanvasProps) {
             />
           )}
 
-          {/* Version history modal */}
-          {showHistory && (
-            <VersionHistoryModal
-              strategyId={strategyId}
-              currentDag={toDAG()}
-              onClose={() => setShowHistory(false)}
-              onRestore={handleRestoreFromVersion}
-            />
-          )}
         </div>
 
         {/* Right: Node inspector */}
         <NodeInspector />
       </div>
+
+      {/* Version history modal — rendered OUTSIDE overflow-hidden container */}
+      {showHistory && (
+        <VersionHistoryModal
+          strategyId={strategyId}
+          currentDag={toDAG()}
+          onClose={() => setShowHistory(false)}
+          onRestore={handleRestoreFromVersion}
+        />
+      )}
+
+      {/* Backtest config panel — rendered OUTSIDE overflow-hidden container */}
+      {showBacktestPanel && (
+        <BacktestConfigPanel
+          strategyId={strategyId}
+          onClose={() => setShowBacktestPanel(false)}
+        />
+      )}
     </div>
   );
 }

@@ -52,7 +52,7 @@ export function DashboardClient() {
               <Link href="/strategies" className="btn-ghost text-sm text-gray-400">
                 Strategies
               </Link>
-              <Link href="/dashboard" className="btn-ghost text-sm text-gray-400">
+              <Link href="/backtests" className="btn-ghost text-sm text-gray-400">
                 Backtests
               </Link>
               <Link href="/dashboard" className="btn-ghost text-sm text-gray-400">

@@ -8,12 +8,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "inngest": "^3.29.0",
+    "@opentelemetry/core": "^2.6.0",
+    "@sentry/nextjs": "^8.55.0",
     "@supercanvas/db": "workspace:*",
-    "@supercanvas/types": "workspace:*"
+    "@supercanvas/types": "workspace:*",
+    "drizzle-orm": "^0.38.4",
+    "inngest": "^3.29.0"
   },
   "devDependencies": {
     "@supercanvas/tsconfig": "workspace:*",
+    "@types/node": "^22.19.15",
     "typescript": "^5.7.0"
   }
 }

@@ -184,7 +184,7 @@ export const strategyRouter = router({
 
       // Verify ownership
       const existing = await ctx.db
-        .select({ id: strategies.id, version: strategies.version })
+        .select({ id: strategies.id, version: strategies.version, dagJson: strategies.dagJson })
         .from(strategies)
         .where(
           and(eq(strategies.id, input.id), eq(strategies.userId, userId))
@@ -196,15 +196,19 @@ export const strategyRouter = router({
       }
 
       const currentVersion = existing[0].version;
-      const nextVersion = currentVersion + 1;
+      const isChanged = JSON.stringify(input.dag) !== JSON.stringify(existing[0].dagJson);
+      
+      const nextVersion = isChanged ? currentVersion + 1 : currentVersion;
 
-      // Save version snapshot
-      await ctx.db.insert(strategyVersions).values({
-        strategyId: input.id,
-        dagJson: input.dag,
-        version: currentVersion,
-        message: input.versionMessage ?? `Version ${currentVersion}`,
-      });
+      if (isChanged) {
+        // Save version snapshot
+        await ctx.db.insert(strategyVersions).values({
+          strategyId: input.id,
+          dagJson: input.dag,
+          version: currentVersion,
+          message: input.versionMessage ?? `Version ${currentVersion}`,
+        });
+      }
 
       // Update strategy
       const [updated] = await ctx.db
